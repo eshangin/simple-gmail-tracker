@@ -38,8 +38,6 @@ declare module "gmail-js" {
     export class Gmail {
         constructor($: JQueryStatic);
     }
-
-    export default Gmail;
 }
 
 interface Window {

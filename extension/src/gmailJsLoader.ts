@@ -8,7 +8,7 @@
 //
 // Let the "big" extension bundle load separately!
 
-import GmailFactory from "gmail-js";
+import { Gmail as GmailFactory } from "gmail-js";
 import $ from "jquery";
 
 if ("trustedTypes" in window) {
