@@ -50,11 +50,17 @@ function startExtension(gmail: Gmail): void {
 
         // Hook into every compose window (new email, reply, forward).
         gmail.observe.on("compose", (compose) => {
-            // Listen for click on the send button and inject the tracking pixel
-            // into the email body just before Gmail sends the request.
-            compose.dom("send_button").on("click", () => {
+            const sendButton = compose.dom("send_button")[0];
+            if (!sendButton) {
+                console.warn("[SGT] Send button not found in compose window.");
+                return;
+            }
+
+            // Use capture phase so our handler fires BEFORE Gmail's bubble-phase
+            // click handler reads the body and constructs the XHR payload.
+            sendButton.addEventListener("click", () => {
                 injectTrackingPixel(compose, userEmail);
-            });
+            }, { capture: true });
         });
     });
 }
