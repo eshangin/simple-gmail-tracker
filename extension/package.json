@@ -4,12 +4,11 @@
   "description": "",
   "main": "",
   "scripts": {
-    "deps": "npm install",
-    "stage": "mkdir dist || echo Dist already exists.",
-    "bundle": "esbuild src/gmailJsLoader.js src/extension.js --outdir=dist/ --bundle --sourcemap --target=es6",
-    "devbuild": "cp ../gmail.js/src/gmail.js node_modules/gmail-js/src/ && npm run build",
+    "stage": "mkdir dist 2>nul & mkdir dist\\icons 2>nul & copy manifest.json dist\\manifest.json /Y & xcopy icons dist\\icons /E /Y /Q",
+    "bundle": "esbuild src/gmailJsLoader.ts src/extension.ts src/extensionInjector.ts --outdir=dist/ --bundle --sourcemap --target=es6",
+    "typecheck": "tsc --noEmit",
     "build": "npm run stage && npm run bundle",
-    "dev": "npm run bundle -- --watch"
+    "dev": "npm run stage && npm run bundle -- --watch"
   },
   "author": "Jostein kjønigsen",
   "license": "ISC",
@@ -18,6 +17,9 @@
     "jquery": "4.0.0"
   },
   "devDependencies": {
-    "esbuild": "^0.27.0"
+    "@types/chrome": "^0.1.37",
+    "@types/jquery": "^3.5.33",
+    "esbuild": "^0.27.0",
+    "typescript": "^5.9.3"
   }
 }
