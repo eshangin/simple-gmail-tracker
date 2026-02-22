@@ -20,11 +20,8 @@
     "web_accessible_resources": [{
         "resources": [
             "extensionInjector.js",
-            "extensionInjector.js.map",
             "gmailJsLoader.js",
-            "gmailJsLoader.js.map",
-            "extension.js",
-            "extension.js.map"
+            "extension.js"
         ],
         "matches": ["<all_urls>"]
     }],
