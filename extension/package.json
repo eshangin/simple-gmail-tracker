@@ -2,7 +2,7 @@
   "name": "simple-gmail-tracker",
   "version": "0.0.1",
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "webpack --mode production && node scripts/zip-dist.js",
     "dev": "webpack --mode development --watch"
   },
   "dependencies": {
@@ -10,8 +10,10 @@
     "jquery": "4.0.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/chrome": "^0.1.37",
     "@types/jquery": "^3.5.33",
+    "adm-zip": "^0.5.16",
     "copy-webpack-plugin": "^13.0.1",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
