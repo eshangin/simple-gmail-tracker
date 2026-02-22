@@ -23,9 +23,9 @@
             "gmailJsLoader.js",
             "extension.js"
         ],
-        "matches": ["<all_urls>"]
+        "matches": ["*://mail.google.com/*"]
     }],
     "host_permissions": [
-        "https://*/*"
+        "*://mail.google.com/*"
     ]
 }
