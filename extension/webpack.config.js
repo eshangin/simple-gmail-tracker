@@ -4,7 +4,7 @@ const CopyPlugin = require("copy-webpack-plugin");
 /** @type {import('webpack').Configuration} */
 module.exports = (env, argv) => ({
     mode: argv.mode ?? "production",
-    devtool: "source-map",
+    devtool: argv.mode === "development" ? "source-map" : false,
     entry: {
         gmailJsLoader: "./src/gmailJsLoader.ts",
         extension: "./src/extension.ts",
