@@ -18,7 +18,7 @@ if ("trustedTypes" in window) {
     });
 
     $.extend({
-        htmlPrefilter: trustedHTMLpolicy.createHTML // this is the actual function which jQuery needs
+        htmlPrefilter: (html: string) => trustedHTMLpolicy.createHTML(html)
     });
 }
 
