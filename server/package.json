@@ -1,0 +1,20 @@
+{
+    "name": "simple-gmail-tracker-server",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "gen-certs": "node -e \"require('fs').mkdirSync('certs', {recursive:true})\" && mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1",
+        "build": "tsc",
+        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "express": "^4.19.2"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.12.12",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.4.5"
+    }
+}
