@@ -1,83 +1,101 @@
 const path = require("path");
+const fs = require("fs");
 const CopyPlugin = require("copy-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
+const webpack = require("webpack");
 
 /** @type {import('webpack').Configuration} */
-module.exports = (env, argv) => ({
-    // "production" or "development" — passed via --mode flag in package.json scripts.
-    // Controls webpack's built-in optimizations (e.g. scope hoisting).
-    // Defaults to "production" if not specified.
-    mode: argv.mode ?? "production",
+module.exports = (env, argv) => {
+    const isDev = argv.mode === "development";
 
-    // Generate source maps in development only so you can debug original
-    // TypeScript sources in Chrome DevTools. Disabled in production to
-    // avoid exposing source code in the published extension.
-    devtool: argv.mode === "development" ? "source-map" : false,
+    // Load env config from env/env.dev.json (dev) or env/env.build.json (production).
+    // Values are injected into the bundle at build time via DefinePlugin.
+    const envFile = isDev ? "env.dev.json" : "env.build.json";
+    const envConfig = JSON.parse(
+        fs.readFileSync(path.resolve(__dirname, "env", envFile), "utf-8")
+    );
 
-    // Each entry point becomes a separate output bundle.
-    // - gmailJsLoader: initializes gmail.js as early as possible (run_at: document_start)
-    // - extension:     main extension logic, waits for gmail.js to be ready
-    // - extensionInjector: content script that injects the two bundles above into the page
-    entry: {
-        gmailJsLoader: "./src/gmailJsLoader.ts",
-        extension: "./src/extension.ts",
-        extensionInjector: "./src/extensionInjector.ts",
-    },
+    return {
+        // "production" or "development" — passed via --mode flag in package.json scripts.
+        // Controls webpack's built-in optimizations (e.g. scope hoisting).
+        // Defaults to "production" if not specified.
+        mode: argv.mode ?? "production",
 
-    output: {
-        // All built files go into dist/, which is the folder loaded as the unpacked extension.
-        path: path.resolve(__dirname, "dist"),
-        // Each bundle is named after its entry key, e.g. extension.js, gmailJsLoader.js.
-        filename: "[name].js",
-        // Wipe dist/ before each build to avoid stale files from previous builds.
-        clean: true,
-    },
+        // Generate source maps in development only so you can debug original
+        // TypeScript sources in Chrome DevTools. Disabled in production to
+        // avoid exposing source code in the published extension.
+        devtool: isDev ? "source-map" : false,
 
-    resolve: {
-        // Allow imports without file extensions for both TypeScript and JavaScript files.
-        extensions: [".ts", ".js"],
-    },
+        // Each entry point becomes a separate output bundle.
+        // - gmailJsLoader: initializes gmail.js as early as possible (run_at: document_start)
+        // - extension:     main extension logic, waits for gmail.js to be ready
+        // - extensionInjector: content script that injects the two bundles above into the page
+        entry: {
+            gmailJsLoader: "./src/gmailJsLoader.ts",
+            extension: "./src/extension.ts",
+            extensionInjector: "./src/extensionInjector.ts",
+        },
 
-    module: {
-        rules: [
-            {
-                // Run all .ts files through ts-loader to transpile TypeScript to JavaScript.
-                // Full type checking is enabled — build errors will appear for type mistakes.
-                test: /\.ts$/,
-                use: "ts-loader",
-                exclude: /node_modules/,
-            },
-        ],
-    },
+        output: {
+            // All built files go into dist/, which is the folder loaded as the unpacked extension.
+            path: path.resolve(__dirname, "dist"),
+            // Each bundle is named after its entry key, e.g. extension.js, gmailJsLoader.js.
+            filename: "[name].js",
+            // Wipe dist/ before each build to avoid stale files from previous builds.
+            clean: true,
+        },
 
-    plugins: [
-        // Copy static assets into dist/ so the folder is a self-contained
-        // loadable extension (Chrome reads manifest.json from the extension root).
-        new CopyPlugin({
-            patterns: [
-                { from: "manifest.json", to: "manifest.json" },
-                { from: "icons", to: "icons" },
+        resolve: {
+            // Allow imports without file extensions for both TypeScript and JavaScript files.
+            extensions: [".ts", ".js"],
+        },
+
+        module: {
+            rules: [
+                {
+                    // Run all .ts files through ts-loader to transpile TypeScript to JavaScript.
+                    // Full type checking is enabled — build errors will appear for type mistakes.
+                    test: /\.ts$/,
+                    use: "ts-loader",
+                    exclude: /node_modules/,
+                },
             ],
-        }),
-    ],
+        },
 
-    optimization: {
-        // Keep output files human-readable. Useful for inspecting what webpack
-        // bundled and for debugging without source maps.
-        minimize: false,
-        minimizer: [
-            new TerserPlugin({
-                // Don't extract license comments into separate .js.LICENSE.txt files.
-                // Those files are unnecessary for a browser extension.
-                extractComments: false,
+        plugins: [
+            // Copy static assets into dist/ so the folder is a self-contained
+            // loadable extension (Chrome reads manifest.json from the extension root).
+            new CopyPlugin({
+                patterns: [
+                    { from: "manifest.json", to: "manifest.json" },
+                    { from: "icons", to: "icons" },
+                ],
+            }),
+            // Inject env values from env/env.dev.json or env/env.build.json into the bundle
+            // at build time. Accessible in TypeScript as __ENV__.TRACKER_BASE_URL etc.
+            new webpack.DefinePlugin({
+                __ENV__: JSON.stringify(envConfig),
             }),
         ],
-    },
 
-    performance: {
-        // Suppress webpack's bundle size warnings. Those warnings are designed
-        // for web apps where large bundles affect page load time — not relevant
-        // for browser extensions.
-        hints: false,
-    },
-});
+        optimization: {
+            // Keep output files human-readable. Useful for inspecting what webpack
+            // bundled and for debugging without source maps.
+            minimize: false,
+            minimizer: [
+                new TerserPlugin({
+                    // Don't extract license comments into separate .js.LICENSE.txt files.
+                    // Those files are unnecessary for a browser extension.
+                    extractComments: false,
+                }),
+            ],
+        },
+
+        performance: {
+            // Suppress webpack's bundle size warnings. Those warnings are designed
+            // for web apps where large bundles affect page load time — not relevant
+            // for browser extensions.
+            hints: false,
+        },
+    };
+};

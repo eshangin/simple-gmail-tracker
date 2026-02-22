@@ -6,11 +6,13 @@
     "dev": "webpack --mode development --watch"
   },
   "dependencies": {
+    "blueimp-md5": "^2.19.0",
     "gmail-js": "1.1.16",
     "jquery": "4.0.0"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.5.7",
+    "@types/blueimp-md5": "^2.18.2",
     "@types/chrome": "^0.1.37",
     "@types/jquery": "^3.5.33",
     "adm-zip": "^0.5.16",
