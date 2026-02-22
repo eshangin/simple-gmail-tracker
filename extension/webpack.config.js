@@ -43,10 +43,14 @@ module.exports = (env, argv) => ({
         }),
     ],
     optimization: {
+        minimize: false,
         minimizer: [
             new TerserPlugin({
                 extractComments: false,
             }),
         ],
+    },
+    performance: {
+        hints: false,
     },
 });
