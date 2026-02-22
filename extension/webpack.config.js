@@ -42,15 +42,9 @@ module.exports = (env, argv) => ({
         rules: [
             {
                 // Run all .ts files through ts-loader to transpile TypeScript to JavaScript.
+                // Full type checking is enabled — build errors will appear for type mistakes.
                 test: /\.ts$/,
-                use: {
-                    loader: "ts-loader",
-                    options: {
-                        // Skip type checking during bundling for faster builds.
-                        // Run `npm run typecheck` separately to catch type errors.
-                        transpileOnly: true,
-                    },
-                },
+                use: "ts-loader",
                 exclude: /node_modules/,
             },
         ],
