@@ -1,5 +1,6 @@
 import type { Gmail } from "gmail-js";
 import { TrackingPixelInjector } from "./TrackingPixelInjector";
+import { TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
 
 // loader-code: wait until gmailjs has finished loading, before triggering actual extension-code.
 const loaderId = setInterval(() => {
@@ -20,7 +21,8 @@ function startExtension(gmail: Gmail): void {
         const userEmail: string = gmail.get.user_email();
         console.log("[SGT] Loaded for:", userEmail);
 
-        const injector = new TrackingPixelInjector(userEmail);
+        const apiClient = new TrackingPixelsApiClient(__ENV__.TRACKER_BASE_URL);
+        const injector = new TrackingPixelInjector(userEmail, apiClient);
 
         // Hook into every compose window (new email, reply, forward).
         gmail.observe.on("compose", (compose) => {
@@ -32,8 +34,8 @@ function startExtension(gmail: Gmail): void {
 
             // Use capture phase so our handler fires BEFORE Gmail's bubble-phase
             // click handler reads the body and constructs the XHR payload.
-            sendButton.addEventListener("click", () => {
-                injector.inject(compose);
+            sendButton.addEventListener("click", async () => {
+                await injector.inject(compose);
             }, { capture: true });
         });
     });

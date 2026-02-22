@@ -77,7 +77,18 @@ module.exports = (env, argv) => {
             // loadable extension (Chrome reads manifest.json from the extension root).
             new CopyPlugin({
                 patterns: [
-                    { from: "manifest.json", to: "manifest.json" },
+                    {
+                        from: "manifest.json",
+                        to: "manifest.json",
+                        transform(content) {
+                            // Derive a host-permission pattern from TRACKER_BASE_URL.
+                            // e.g. "https://api.example.com" → "https://api.example.com/*"
+                            const trackerOrigin = new URL(envConfig.TRACKER_BASE_URL).origin;
+                            return content
+                                .toString()
+                                .replace(/"__TRACKER_HOST_PERMISSION__"[^\n]*/g, `"${trackerOrigin}/*"`);
+                        },
+                    },
                     { from: "icons", to: "icons" },
                 ],
             }),

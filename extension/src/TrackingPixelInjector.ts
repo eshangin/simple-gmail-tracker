@@ -1,30 +1,37 @@
 import md5 from "blueimp-md5";
+import { TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
 
 /**
  * Handles building and injecting the tracking pixel into outgoing emails.
  */
 export class TrackingPixelInjector {
-    constructor(private readonly userEmail: string) {}
+    constructor(
+        private readonly userEmail: string,
+        private readonly apiClient: TrackingPixelsApiClient,
+    ) {}
 
     /**
-     * Builds the tracking pixel URL with a unique ID and hashed sender email.
+     * Builds the tracking pixel URL from the given id and hashed sender email.
      * @returns Full tracking pixel URL with encoded query parameters.
      */
-    private buildUrl(): string {
-        const id = crypto.randomUUID();
-        const who = md5(this.userEmail.toLowerCase().trim());
-
+    private buildUrl(id: string, who: string): string {
         const params = new URLSearchParams({ id, who });
-
         return `${__ENV__.TRACKER_BASE_URL}/pixel?${params.toString()}`;
     }
 
     /**
-     * Injects a 1x1 invisible tracking pixel into the compose window body.
+     * Registers the tracking pixel with the server, then injects a 1x1 invisible
+     * tracking pixel into the compose window body.
      * Called just before the user sends an email.
      */
-    inject(compose: GmailDomCompose): void {
-        const pixelUrl = this.buildUrl();
+    async inject(compose: GmailDomCompose): Promise<void> {
+        const id = crypto.randomUUID();
+        const who = md5(this.userEmail.toLowerCase().trim());
+        const messageId = compose.email_id();
+
+        await this.apiClient.register(id, who, messageId);
+
+        const pixelUrl = this.buildUrl(id, who);
         const pixelHtml = `<img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;
 
         const currentBody = compose.body();

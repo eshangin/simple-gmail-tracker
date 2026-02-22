@@ -26,6 +26,7 @@
         "matches": ["*://mail.google.com/*"]
     }],
     "host_permissions": [
-        "*://mail.google.com/*"
+        "*://mail.google.com/*",
+        "__TRACKER_HOST_PERMISSION__"
     ]
 }
