@@ -44,6 +44,7 @@ module.exports = (env, argv) => {
             gmailJsLoader: "./src/gmailJsLoader.ts",
             extension: "./src/extension.ts",
             extensionInjector: "./src/extensionInjector.ts",
+            serviceWorker: "./src/serviceWorker.ts",
         },
 
         output: {
