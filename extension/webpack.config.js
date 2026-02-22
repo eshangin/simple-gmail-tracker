@@ -9,11 +9,21 @@ module.exports = (env, argv) => {
     const isDev = argv.mode === "development";
 
     // Load env config from env/env.dev.json (dev) or env/env.build.json (production).
+    // In dev mode, env/env.local.json (gitignored) can override any value from env.dev.json.
     // Values are injected into the bundle at build time via DefinePlugin.
     const envFile = isDev ? "env.dev.json" : "env.build.json";
     const envConfig = JSON.parse(
         fs.readFileSync(path.resolve(__dirname, "env", envFile), "utf-8")
     );
+
+    if (isDev) {
+        const localEnvPath = path.resolve(__dirname, "env", "env.local.json");
+        if (fs.existsSync(localEnvPath)) {
+            const localEnv = JSON.parse(fs.readFileSync(localEnvPath, "utf-8"));
+            Object.assign(envConfig, localEnv);
+            console.log("[webpack] Loaded env overrides from env/env.local.json");
+        }
+    }
 
     return {
         // "production" or "development" — passed via --mode flag in package.json scripts.

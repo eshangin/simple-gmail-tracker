@@ -127,3 +127,6 @@ tags
 !.vscode/extensions.json
 
 # End of https://www.gitignore.io/api/emacs,vim,visualstudiocode,node
+
+# Local env overrides — do not commit, may contain sensitive URLs or keys
+env/env.local.json
