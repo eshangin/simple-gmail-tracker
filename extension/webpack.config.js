@@ -8,6 +8,8 @@ const webpack = require("webpack");
 module.exports = (env, argv) => {
     const isDev = argv.mode === "development";
 
+    const extensionName = isDev ? "[DEV] Simple email tracker for Gmail" : "Simple email tracker for Gmail";
+
     // Load env config from env/env.dev.json (dev) or env/env.build.json (production).
     // In dev mode, env/env.local.json (gitignored) can override any value from env.dev.json.
     // Values are injected into the bundle at build time via DefinePlugin.
@@ -87,7 +89,8 @@ module.exports = (env, argv) => {
                             const trackerOrigin = new URL(envConfig.TRACKER_BASE_URL).origin;
                             return content
                                 .toString()
-                                .replace(/"__TRACKER_HOST_PERMISSION__"[^\n]*/g, `"${trackerOrigin}/*"`);
+                                .replace(/"__TRACKER_HOST_PERMISSION__"[^\n]*/g, `"${trackerOrigin}/*"`)
+                                .replace(/"__NAME__"/g, `"${extensionName}"`);
                         },
                     },
                     { from: "icons", to: "icons" },

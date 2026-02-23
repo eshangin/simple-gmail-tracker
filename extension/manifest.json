@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Simple email tracker for Gmail",
+    "name": "__NAME__",
     "version": "1.0",
     "icons": {
         "16": "icons/icon16.png",
