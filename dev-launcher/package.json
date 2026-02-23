@@ -1,0 +1,10 @@
+{
+    "name": "simple-gmail-tracker-dev-launcher",
+    "private": true,
+    "scripts": {
+        "dev": "node scripts/dev.js"
+    },
+    "devDependencies": {
+        "@ngrok/ngrok": "^1.7.0"
+    }
+}
