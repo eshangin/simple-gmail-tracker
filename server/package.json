@@ -3,7 +3,6 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-        "gen-certs": "node -e \"require('fs').mkdirSync('certs', {recursive:true})\" && mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1",
         "build": "tsc",
         "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
         "start": "node dist/index.js"

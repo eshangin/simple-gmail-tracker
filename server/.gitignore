@@ -1,4 +1,3 @@
 node_modules/
 dist/
-certs/
 env/env.local.json

@@ -83,10 +83,10 @@ async function main() {
 
     console.log(`[dev] Tunnel URL: ${publicUrl}`);
 
-    // Write server env — disable local SSL since ngrok handles TLS.
+    // Write server env — point to the ngrok public URL.
     fs.writeFileSync(
         SERVER_ENV_PATH,
-        JSON.stringify({ BASE_URL: publicUrl, USE_SSL: false }, null, 4),
+        JSON.stringify({ BASE_URL: publicUrl }, null, 4),
     );
     console.log(`[dev] Wrote ${path.relative(ROOT, SERVER_ENV_PATH)}`);
 
