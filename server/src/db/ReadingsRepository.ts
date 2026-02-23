@@ -35,6 +35,13 @@ export class ReadingsRepository {
             return null;
         }
 
+        // We are trying to bypass automatic readings which we get right after pixel insertion
+        const pixelAge = Date.now() - new Date(pixel.createdAt + "Z").getTime();
+        if (pixelAge < 1000) {
+            console.log(`[SGT] Pixel ${pixelId} is too fresh (${pixelAge}ms old) — reading not saved.`);
+            return null;
+        }
+
         const id = randomUUID();
         const stmt = db.prepare(`
             INSERT INTO Readings (id, pixelId, threadId, who)
