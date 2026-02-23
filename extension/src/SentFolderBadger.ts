@@ -1,5 +1,5 @@
 import type { Gmail } from "gmail-js";
-import type { TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
+import type { MessageReadStatus, TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
 import type { Who } from "./Who";
 
 const BADGE_CLASS = "sgt-tracked-badge";
@@ -48,22 +48,24 @@ export class SentFolderBadger {
 
         const threadIds = unbadged.map((row) => row.thread_id);
 
+        let readByThreadId = new Map<string, boolean>();
         try {
-            await this.apiClient.getByMessages(threadIds, this.who.userEmailHash);
+            const statuses = await this.apiClient.getByMessages(threadIds, this.who.userEmailHash);
+            readByThreadId = new Map(statuses.map((s: MessageReadStatus) => [s.threadId, s.read]));
         } catch (err) {
             console.warn("[SGT] getByMessages failed:", err);
         }
 
         for (const row of unbadged) {
-            this.badgeRow(row.$el[0]);
+            const read = readByThreadId.get(row.thread_id) ?? false;
+            this.badgeRow(row.$el[0], read);
         }
     }
 
-    private badgeRow(el: HTMLElement): void {
+    private badgeRow(el: HTMLElement, read: boolean): void {
         if (!el || el.querySelector(`.${BADGE_CLASS}`)) return; // already badged
 
-        const COLORS = ["#32ae6c", "#d4d4d4"];
-        const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const color = read ? "#32ae6c" : "#d4d4d4";
 
         const badge = document.createElement("span");
         badge.className = BADGE_CLASS;

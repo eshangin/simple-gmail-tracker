@@ -6,6 +6,12 @@
  * The content script (extensionInjector) relays the message to the
  * service worker and dispatches a response event back.
  */
+
+export interface MessageReadStatus {
+    threadId: string;
+    read: boolean;
+}
+
 export class TrackingPixelsApiClient {
     constructor(private readonly baseUrl: string) {}
 
@@ -15,7 +21,7 @@ export class TrackingPixelsApiClient {
      * The server is expected to return tracking data for each thread;
      * the raw response body is resolved as the promise value.
      */
-    getByMessages(threadIds: string[], who: string): Promise<unknown> {
+    getByMessages(threadIds: string[], who: string): Promise<MessageReadStatus[]> {
         return new Promise((resolve, reject) => {
             const reqId = crypto.randomUUID();
 
@@ -24,7 +30,7 @@ export class TrackingPixelsApiClient {
                 if (detail.reqId !== reqId) return;
                 window.removeEventListener("sgt:get-pixels-by-messages-response", handler);
                 if (detail.success) {
-                    resolve(detail.data);
+                    resolve(detail.data as MessageReadStatus[]);
                 } else {
                     reject(new Error(`[SGT] Failed to get pixels by messages: ${detail.error}`));
                 }
