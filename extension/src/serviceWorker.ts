@@ -87,6 +87,15 @@ function connectToReadingEvents(): void {
                                             }
                                         }
                                     });
+
+                                    // Show browser notification
+                                    chrome.notifications.create({
+                                        type: 'basic',
+                                        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+                                        title: 'Email Read',
+                                        message: 'Email was read!',
+                                        requireInteraction: true
+                                    });
                                 } catch (e) {
                                     console.error("[SGT] Failed to parse SSE reading event:", e);
                                 }
