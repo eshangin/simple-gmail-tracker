@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
+import { PixelsRepository } from "../db/PixelsRepository";
 
 const router = Router();
+const pixelsRepo = new PixelsRepository();
 
 interface RegisterPixelBody {
     id: string;
@@ -16,10 +18,12 @@ interface ByMessagesBody {
 
 /**
  * POST /api/pixels
- * Registers a new tracking pixel. Logs the received parameters to the console.
+ * Registers a new tracking pixel and persists it to the database.
  */
 router.post("/pixels", (req: Request<{}, {}, RegisterPixelBody>, res: Response) => {
     const { id, who, messageId, threadId } = req.body;
+
+    pixelsRepo.insert({ id, who, messageId, threadId });
 
     console.log("[SGT] Tracking pixel registered:");
     console.log("  id:        ", id);
