@@ -1,8 +1,10 @@
 import { Router, Request, Response } from "express";
 import { PixelsRepository } from "../db/PixelsRepository";
+import { ReadingsRepository } from "../db/ReadingsRepository";
 
 const router = Router();
 const pixelsRepo = new PixelsRepository();
+const readingsRepo = new ReadingsRepository();
 
 interface RegisterPixelBody {
     id: string;
@@ -40,11 +42,13 @@ router.post("/pixels", (req: Request<{}, {}, RegisterPixelBody>, res: Response) 
  * `read` is currently randomised as a placeholder.
  */
 router.post("/pixels/by-messages", (req: Request<{}, {}, ByMessagesBody>, res: Response) => {
-    const { threadIds } = req.body;
+    const { threadIds, who } = req.body;
+
+    const readMap = readingsRepo.hasReadingsByThreadIds(threadIds ?? [], who);
 
     const result = (threadIds ?? []).map((threadId) => ({
         threadId,
-        read: Math.random() < 0.5,
+        read: readMap.get(threadId) ?? false,
     }));
 
     res.status(200).json(result);

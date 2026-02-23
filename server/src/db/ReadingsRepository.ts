@@ -44,4 +44,23 @@ export class ReadingsRepository {
 
         return { id, pixelId, threadId: pixel.threadId, who, createdAt: new Date().toISOString() };
     }
+
+    /**
+     * For each threadId, returns whether at least one Reading exists
+     * matching both threadId and who.
+     */
+    hasReadingsByThreadIds(threadIds: string[], who: string): Map<string, boolean> {
+        const result = new Map<string, boolean>(threadIds.map((id) => [id, false]));
+        if (threadIds.length === 0) return result;
+
+        const placeholders = threadIds.map(() => "?").join(", ");
+        const stmt = db.prepare(
+            `SELECT DISTINCT threadId FROM Readings WHERE who = ? AND threadId IN (${placeholders})`
+        );
+        const rows = stmt.all(who, ...threadIds) as { threadId: string }[];
+        for (const row of rows) {
+            result.set(row.threadId, true);
+        }
+        return result;
+    }
 }
