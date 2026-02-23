@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import db from "./database";
 import { PixelsRepository } from "./PixelsRepository";
+import { readingEvents } from "../events/readingEvents";
 
 export interface ReadingRecord {
     id: string;
@@ -49,7 +50,9 @@ export class ReadingsRepository {
         `);
         stmt.run({ id, pixelId, threadId: pixel.threadId, who });
 
-        return { id, pixelId, threadId: pixel.threadId, who, createdAt: new Date().toISOString() };
+        const record: ReadingRecord = { id, pixelId, threadId: pixel.threadId, who, createdAt: new Date().toISOString() };
+        readingEvents.emitReading({ threadId: pixel.threadId, who });
+        return record;
     }
 
     /**

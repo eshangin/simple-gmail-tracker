@@ -41,3 +41,15 @@ window.addEventListener("sgt:register-pixel", (event: Event) => {
 
 addScript("gmailJsLoader.js");
 addScript("extension.js");
+
+// Forward "reading-registered" messages from the service worker to the
+// Gmail page context as a CustomEvent so SentFolderBadger can react.
+chrome.runtime.onMessage.addListener((message: { action: string; threadId?: string; who?: string }) => {
+    if (message.action === "reading-registered" && message.threadId) {
+        window.dispatchEvent(
+            new CustomEvent("sgt:reading-registered", {
+                detail: { threadId: message.threadId, who: message.who },
+            }),
+        );
+    }
+});

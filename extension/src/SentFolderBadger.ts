@@ -18,6 +18,28 @@ export class SentFolderBadger {
         private readonly apiClient: TrackingPixelsApiClient,
     ) {
         this.scheduleNextPoll();
+        this.listenForReadingEvents();
+    }
+
+    /**
+     * Listens for real-time "sgt:reading-registered" events dispatched by the
+     * content script (extensionInjector) when the server pushes an SSE notification.
+     * Removes the existing badge on the matching row so the next poll cycle
+     * re-queries the server and re-renders it with the updated (read) status.
+     */
+    private listenForReadingEvents(): void {
+        window.addEventListener("sgt:reading-registered", (event: Event) => {
+            const { threadId } = (event as CustomEvent<{ threadId: string; who: string }>).detail;
+
+            const rows = this.gmail.dom.visible_messages();
+            for (const row of rows) {
+                if (row.thread_id !== threadId) continue;
+                const el = row.$el[0];
+                if (!el) continue;
+                const badge = el.querySelector("." + BADGE_CLASS);
+                if (badge) badge.remove();
+            }
+        });
     }
 
     private scheduleNextPoll(): void {
