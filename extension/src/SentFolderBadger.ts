@@ -1,26 +1,33 @@
 import type { Gmail } from "gmail-js";
+import type { TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
+import type { Who } from "./Who";
 
 const BADGE_CLASS = "sgt-tracked-badge";
 const POLL_INTERVAL_MS = 500;
 
 /**
  * Adds a visual checkmark badge to every row in the Sent folder.
- * Polls visible rows every 500 ms and badges any that are missing one.
+ * Polls visible rows every 500 ms; for any un-badged rows it first
+ * queries POST /api/pixels/by-messages so the server can report their
+ * tracking status, then renders the badge.
  */
 export class SentFolderBadger {
-    constructor(private readonly gmail: Gmail) {
+    constructor(
+        private readonly gmail: Gmail,
+        private readonly who: Who,
+        private readonly apiClient: TrackingPixelsApiClient,
+    ) {
         this.scheduleNextPoll();
     }
 
     private scheduleNextPoll(): void {
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
-                this.applyBadges();
+                await this.applyBadges();
             } catch (err) {
                 console.error("[SGT] SentFolderBadger error:", err);
-            } finally {
-                this.scheduleNextPoll();
             }
+            this.scheduleNextPoll();
         }, POLL_INTERVAL_MS);
     }
 
@@ -28,10 +35,26 @@ export class SentFolderBadger {
     // Badge rendering
     // -------------------------------------------------------------------------
 
-    private applyBadges(): void {
+    private async applyBadges(): Promise<void> {
         if (this.gmail.get.current_page() !== "sent") return;
 
-        for (const row of this.gmail.dom.visible_messages()) {
+        const rows = this.gmail.dom.visible_messages();
+        const unbadged = rows.filter((row) => {
+            const el = row.$el[0];
+            return el && !el.querySelector(`.${BADGE_CLASS}`);
+        });
+
+        if (unbadged.length === 0) return;
+
+        const threadIds = unbadged.map((row) => row.thread_id);
+
+        try {
+            await this.apiClient.getByMessages(threadIds, this.who.userEmailHash);
+        } catch (err) {
+            console.warn("[SGT] getByMessages failed:", err);
+        }
+
+        for (const row of unbadged) {
             this.badgeRow(row.$el[0]);
         }
     }

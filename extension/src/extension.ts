@@ -2,6 +2,7 @@ import type { Gmail } from "gmail-js";
 import { TrackingPixelInjector } from "./TrackingPixelInjector";
 import { TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
 import { SentFolderBadger } from "./SentFolderBadger";
+import { Who } from "./Who";
 
 // loader-code: wait until gmailjs has finished loading, before triggering actual extension-code.
 const loaderId = setInterval(() => {
@@ -23,8 +24,9 @@ function startExtension(gmail: Gmail): void {
         console.log("[SGT] Loaded for:", userEmail);
 
         const apiClient = new TrackingPixelsApiClient(__ENV__.TRACKER_BASE_URL);
-        const injector = new TrackingPixelInjector(userEmail, apiClient);
-        new SentFolderBadger(gmail);
+        const who = new Who(userEmail);
+        const injector = new TrackingPixelInjector(who, apiClient);
+        new SentFolderBadger(gmail, who, apiClient);
 
         // Hook into every compose window (new email, reply, forward).
         gmail.observe.on("compose", (compose) => {

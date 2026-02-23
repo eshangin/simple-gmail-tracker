@@ -1,12 +1,12 @@
-import md5 from "blueimp-md5";
 import { TrackingPixelsApiClient } from "./TrackingPixelsApiClient";
+import { Who } from "./Who";
 
 /**
  * Handles building and injecting the tracking pixel into outgoing emails.
  */
 export class TrackingPixelInjector {
     constructor(
-        private readonly userEmail: string,
+        private readonly who: Who,
         private readonly apiClient: TrackingPixelsApiClient,
     ) {}
 
@@ -26,12 +26,11 @@ export class TrackingPixelInjector {
      */
     async inject(compose: GmailDomCompose): Promise<void> {
         const id = crypto.randomUUID();
-        const who = md5(this.userEmail.toLowerCase().trim());
         const messageId = compose.email_id();
 
-        await this.apiClient.register(id, who, messageId);
+        await this.apiClient.register(id, this.who.userEmailHash, messageId);
 
-        const pixelUrl = this.buildUrl(id, who);
+        const pixelUrl = this.buildUrl(id, this.who.userEmailHash);
         const pixelHtml = `<img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;
 
         const currentBody = compose.body();

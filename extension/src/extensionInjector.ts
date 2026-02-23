@@ -7,6 +7,22 @@ function addScript(src: string): void {
 
 // Bridge: relay register-pixel requests from the page-context script to the
 // service worker (which has network access), then return the response.
+window.addEventListener("sgt:get-pixels-by-messages", (event: Event) => {
+    const { reqId, baseUrl, threadIds, who } =
+        (event as CustomEvent<{ reqId: string; baseUrl: string; threadIds: string[]; who: string }>).detail;
+
+    chrome.runtime.sendMessage(
+        { action: "get-pixels-by-messages", baseUrl, threadIds, who },
+        (response: { success: boolean; data?: unknown; error?: string }) => {
+            window.dispatchEvent(
+                new CustomEvent("sgt:get-pixels-by-messages-response", {
+                    detail: { reqId, ...(response ?? { success: false, error: "No response from service worker" }) },
+                }),
+            );
+        },
+    );
+});
+
 window.addEventListener("sgt:register-pixel", (event: Event) => {
     const { reqId, baseUrl, id, who, messageId } =
         (event as CustomEvent<{ reqId: string; baseUrl: string; id: string; who: string; messageId: string }>).detail;
