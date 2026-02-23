@@ -75,27 +75,29 @@ function connectToReadingEvents(): void {
 
                             if (eventName === "reading" && data) {
                                 try {
-                                    const parsed = JSON.parse(data) as { threadId: string; who: string };
-                                    chrome.tabs.query({ url: "*://mail.google.com/*" }, (tabs) => {
-                                        for (const tab of tabs) {
-                                            if (tab.id != null) {
-                                                chrome.tabs.sendMessage(tab.id, {
-                                                    action: "reading-registered",
-                                                    threadId: parsed.threadId,
-                                                    who: parsed.who,
-                                                }).catch(() => { /* tab may not have content script yet */ });
+                                    const parsed = JSON.parse(data) as { threadId: string; who: string; firstReading: boolean };
+                                    if (parsed.firstReading) {
+                                        chrome.tabs.query({ url: "*://mail.google.com/*" }, (tabs) => {
+                                            for (const tab of tabs) {
+                                                if (tab.id != null) {
+                                                    chrome.tabs.sendMessage(tab.id, {
+                                                        action: "reading-registered",
+                                                        threadId: parsed.threadId,
+                                                        who: parsed.who,
+                                                    }).catch(() => { /* tab may not have content script yet */ });
+                                                }
                                             }
-                                        }
-                                    });
+                                        });
 
-                                    // Show browser notification
-                                    chrome.notifications.create({
-                                        type: 'basic',
-                                        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-                                        title: 'Email Read',
-                                        message: 'Email was read!',
-                                        requireInteraction: true
-                                    });
+                                        // Show browser notification
+                                        chrome.notifications.create(parsed.threadId, {
+                                            type: 'basic',
+                                            iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+                                            title: 'Email Read',
+                                            message: 'Email was read!',
+                                            requireInteraction: true
+                                        });
+                                    }
                                 } catch (e) {
                                     console.error("[SGT] Failed to parse SSE reading event:", e);
                                 }
@@ -118,6 +120,12 @@ function connectToReadingEvents(): void {
 }
 
 connectToReadingEvents();
+
+// Handle notification clicks to open Gmail thread
+chrome.notifications.onClicked.addListener((notificationId) => {
+    const url = `https://mail.google.com/mail/u/0/#inbox/${notificationId}`;
+    chrome.tabs.create({ url });
+});
 
 /**
  * Background service worker.

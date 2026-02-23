@@ -50,8 +50,15 @@ export class ReadingsRepository {
         `);
         stmt.run({ id, pixelId, threadId: pixel.threadId, who });
 
+        // Check if this is the first reading for this threadId and who
+        const countStmt = db.prepare(`
+            SELECT COUNT(*) as count FROM Readings WHERE threadId = ? AND who = ?
+        `);
+        const countResult = countStmt.get(pixel.threadId, who) as { count: number };
+        const firstReading = countResult.count === 1; // Since we just inserted, count should be 1 for first
+
         const record: ReadingRecord = { id, pixelId, threadId: pixel.threadId, who, createdAt: new Date().toISOString() };
-        readingEvents.emitReading({ threadId: pixel.threadId, who });
+        readingEvents.emitReading({ threadId: pixel.threadId, who, firstReading });
         return record;
     }
 

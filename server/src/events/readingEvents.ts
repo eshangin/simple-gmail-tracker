@@ -3,6 +3,7 @@ import { EventEmitter } from "events";
 export interface ReadingEvent {
     threadId: string;
     who: string;
+    firstReading: boolean;
 }
 
 /**
