@@ -8,7 +8,7 @@
         "128": "icons/icon128.png"
     },
     "description": "Simple email tracker for Gmail",
-    "permissions": ["notifications", "tabs"],
+    "permissions": ["notifications"],
     "background": {
         "service_worker": "serviceWorker.js"
     },

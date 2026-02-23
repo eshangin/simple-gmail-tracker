@@ -90,7 +90,7 @@ function connectToReadingEvents(): void {
                                         });
 
                                         // Show browser notification
-                                        chrome.notifications.create(parsed.threadId, {
+                                        chrome.notifications.create({
                                             type: 'basic',
                                             iconUrl: chrome.runtime.getURL('icons/icon48.png'),
                                             title: 'Email Read',
@@ -120,12 +120,6 @@ function connectToReadingEvents(): void {
 }
 
 connectToReadingEvents();
-
-// Handle notification clicks to open Gmail thread
-chrome.notifications.onClicked.addListener((notificationId) => {
-    const url = `https://mail.google.com/mail/u/0/#inbox/${notificationId}`;
-    chrome.tabs.create({ url });
-});
 
 /**
  * Background service worker.
