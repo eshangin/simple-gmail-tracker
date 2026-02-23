@@ -4,6 +4,7 @@ import path from "path";
 import express from "express";
 import pingRouter from "./routes/ping";
 import pixelsRouter from "./routes/pixels";
+import pixelRouter from "./routes/pixel";
 
 interface ServerEnv {
     BASE_URL: string;
@@ -28,6 +29,7 @@ app.use(express.json());
 
 app.use("/api", pingRouter);
 app.use("/api", pixelsRouter);
+app.use(pixelRouter);
 
 http.createServer(app).listen(PORT, () => {
     console.log(`[SGT] Server running at ${BASE_URL}`);
