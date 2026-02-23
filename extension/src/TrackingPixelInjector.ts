@@ -27,8 +27,9 @@ export class TrackingPixelInjector {
     async inject(compose: GmailDomCompose): Promise<void> {
         const id = crypto.randomUUID();
         const messageId = compose.email_id();
+        const threadId = compose.thread_id();
 
-        await this.apiClient.register(id, this.who.userEmailHash, messageId);
+        await this.apiClient.register(id, this.who.userEmailHash, messageId, threadId);
 
         const pixelUrl = this.buildUrl(id, this.who.userEmailHash);
         const pixelHtml = `<img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;

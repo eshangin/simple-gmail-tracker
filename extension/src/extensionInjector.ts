@@ -24,11 +24,11 @@ window.addEventListener("sgt:get-pixels-by-messages", (event: Event) => {
 });
 
 window.addEventListener("sgt:register-pixel", (event: Event) => {
-    const { reqId, baseUrl, id, who, messageId } =
-        (event as CustomEvent<{ reqId: string; baseUrl: string; id: string; who: string; messageId: string }>).detail;
+    const { reqId, baseUrl, id, who, messageId, threadId } =
+        (event as CustomEvent<{ reqId: string; baseUrl: string; id: string; who: string; messageId: string; threadId: string }>).detail;
 
     chrome.runtime.sendMessage(
-        { action: "register-pixel", baseUrl, id, who, messageId },
+        { action: "register-pixel", baseUrl, id, who, messageId, threadId },
         (response: { success: boolean; error?: string }) => {
             window.dispatchEvent(
                 new CustomEvent("sgt:register-pixel-response", {

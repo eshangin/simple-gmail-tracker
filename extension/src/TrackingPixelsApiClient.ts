@@ -46,7 +46,7 @@ export class TrackingPixelsApiClient {
      * picks up, forwards to the service worker, and responds to via
      * a "sgt:register-pixel-response" CustomEvent.
      */
-    register(id: string, who: string, messageId: string): Promise<void> {
+    register(id: string, who: string, messageId: string, threadId: string): Promise<void> {
         return new Promise((resolve, reject) => {
             const reqId = crypto.randomUUID();
 
@@ -65,7 +65,7 @@ export class TrackingPixelsApiClient {
 
             window.dispatchEvent(
                 new CustomEvent("sgt:register-pixel", {
-                    detail: { reqId, baseUrl: this.baseUrl, id, who, messageId },
+                    detail: { reqId, baseUrl: this.baseUrl, id, who, messageId, threadId },
                 }),
             );
         });
