@@ -29,8 +29,6 @@ export class TrackingPixelInjector {
         const messageId = compose.email_id();
         const threadId = compose.thread_id();
 
-        await this.apiClient.register(id, this.who.userEmailHash, messageId, threadId);
-
         const pixelUrl = this.buildUrl(id, this.who.userEmailHash);
         const pixelHtml = `<img src="${pixelUrl}" width="1" height="1" style="display:none" alt="">`;
 
@@ -38,5 +36,11 @@ export class TrackingPixelInjector {
         compose.body(currentBody + pixelHtml);
 
         console.log("[SGT] Tracking pixel injected:", pixelUrl);
+
+        try {
+            await this.apiClient.register(id, this.who.userEmailHash, messageId, threadId);
+        } catch (err) {
+            console.error("[SGT] Failed to register tracking pixel:", err);
+        }
     }
 }
