@@ -9,7 +9,6 @@ const readingsRepo = new ReadingsRepository();
 interface RegisterPixelBody {
     id: string;
     who: string;
-    messageId: string;
     threadId: string;
 }
 
@@ -23,14 +22,13 @@ interface ByMessagesBody {
  * Registers a new tracking pixel and persists it to the database.
  */
 router.post("/pixels", (req: Request<{}, {}, RegisterPixelBody>, res: Response) => {
-    const { id, who, messageId, threadId } = req.body;
+    const { id, who, threadId } = req.body;
 
-    pixelsRepo.insert({ id, who, messageId, threadId });
+    pixelsRepo.insert({ id, who, threadId });
 
     console.log("[SGT] Tracking pixel registered:");
     console.log("  id:        ", id);
     console.log("  who:       ", who);
-    console.log("  messageId: ", messageId);
     console.log("  threadId:  ", threadId);
 
     res.status(201).json({ ok: true });

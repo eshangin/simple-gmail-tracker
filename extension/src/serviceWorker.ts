@@ -3,7 +3,6 @@ interface RegisterPixelMessage {
     baseUrl: string;
     id: string;
     who: string;
-    messageId: string;
     threadId: string;
 }
 
@@ -129,13 +128,13 @@ connectToReadingEvents();
 chrome.runtime.onMessage.addListener(
     (message: IncomingMessage, _sender, sendResponse: (r: RegisterPixelResponse | GetPixelsByMessagesResponse) => void) => {
         if (message.action === "register-pixel") {
-            const { baseUrl, id, who, messageId, threadId } = message;
+            const { baseUrl, id, who, threadId } = message;
             const url = `${baseUrl}/api/pixels`;
 
             fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id, who, messageId, threadId }),
+                body: JSON.stringify({ id, who, threadId }),
             })
                 .then((response) => {
                     if (!response.ok) {

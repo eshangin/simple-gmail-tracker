@@ -26,7 +26,6 @@ export class TrackingPixelInjector {
      */
     async inject(compose: GmailDomCompose): Promise<void> {
         const id = crypto.randomUUID();
-        const messageId = compose.email_id();
         const threadId = compose.thread_id();
 
         const pixelUrl = this.buildUrl(id, this.who.userEmailHash);
@@ -38,7 +37,7 @@ export class TrackingPixelInjector {
         console.log("[SGT] Tracking pixel injected:", pixelUrl);
 
         try {
-            await this.apiClient.register(id, this.who.userEmailHash, messageId, threadId);
+            await this.apiClient.register(id, this.who.userEmailHash, threadId);
         } catch (err) {
             console.error("[SGT] Failed to register tracking pixel:", err);
         }

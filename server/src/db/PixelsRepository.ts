@@ -3,7 +3,6 @@ import db from "./database";
 export interface PixelRecord {
     id: string;
     who: string;
-    messageId: string;
     threadId: string;
     createdAt: string;
 }
@@ -12,7 +11,6 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS Pixels (
         id        TEXT    PRIMARY KEY,
         who       TEXT    NOT NULL,
-        messageId TEXT    NOT NULL,
         threadId  TEXT    NOT NULL,
         createdAt TEXT    NOT NULL DEFAULT (datetime('now'))
     )
@@ -21,10 +19,11 @@ db.exec(`
 export class PixelsRepository {
     insert(pixel: Omit<PixelRecord, "createdAt">): void {
         const stmt = db.prepare(`
-            INSERT INTO Pixels (id, who, messageId, threadId)
-            VALUES (@id, @who, @messageId, @threadId)
+            INSERT INTO Pixels (id, who, threadId)
+            VALUES (@id, @who, @threadId)
         `);
-        stmt.run(pixel);
+        // Ensure we pass a shape matching the INSERT parameters
+        stmt.run({ id: pixel.id, who: pixel.who, threadId: pixel.threadId });
     }
 
     findById(id: string): PixelRecord | undefined {
