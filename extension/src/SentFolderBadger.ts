@@ -96,10 +96,12 @@ export class SentFolderBadger {
         const color = read === true ? "#32ae6c" : "#d4d4d4";
 
         const badge = document.createElement("span");
-        const tooltip = read === null ? "No tracking pixel registered" : "Tracking pixel sent";
+        const tooltip = read === null 
+            ? "No tracking pixel registered" 
+            : (read === true ? "Read" : "Not read yet");
         badge.className = BADGE_CLASS;
-        badge.title = tooltip;
         badge.setAttribute("data-tooltip", tooltip);
+        badge.setAttribute("aria-label", tooltip);
         badge.textContent = read === null ? "✖" : "✓";
         badge.style.cssText =
             `display:inline-block;` +
@@ -107,8 +109,7 @@ export class SentFolderBadger {
             "font-size:16px;" +
             "font-weight:bold;" +
             "padding-right:10px;" +
-            "vertical-align:middle;" +
-            "pointer-events:none;";
+            "vertical-align:middle;";
 
         // Find the TD containing the TO addresses (identified by a child with [email] attribute)
         // and insert our badge TD immediately before it.
