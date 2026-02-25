@@ -71,28 +71,36 @@ export class SentFolderBadger {
         const threadIds = unbadged.map((row) => row.thread_id);
 
         let readByThreadId = new Map<string, boolean>();
+        let returnedThreadIds = new Set<string>();
         try {
             const statuses = await this.apiClient.getByMessages(threadIds, this.who.userEmailHash);
             readByThreadId = new Map(statuses.map((s: MessageReadStatus) => [s.threadId, s.read]));
+            returnedThreadIds = new Set(statuses.map((s: MessageReadStatus) => s.threadId));
         } catch (err) {
             console.warn("[SGT] getByMessages failed:", err);
         }
 
         for (const row of unbadged) {
-            const read = readByThreadId.get(row.thread_id) ?? false;
-            this.badgeRow(row.$el[0], read);
+            const hasInfo = returnedThreadIds.has(row.thread_id);
+            if (!hasInfo) {
+                this.badgeRow(row.$el[0], null);
+            } else {
+                const read = readByThreadId.get(row.thread_id) ?? false;
+                this.badgeRow(row.$el[0], read);
+            }
         }
     }
 
-    private badgeRow(el: HTMLElement, read: boolean): void {
+    private badgeRow(el: HTMLElement, read: boolean | null): void {
         if (!el || el.querySelector(`.${BADGE_CLASS}`)) return; // already badged
-
-        const color = read ? "#32ae6c" : "#d4d4d4";
+        const color = read === true ? "#32ae6c" : "#d4d4d4";
 
         const badge = document.createElement("span");
+        const tooltip = read === null ? "No tracking pixel registered" : "Tracking pixel sent";
         badge.className = BADGE_CLASS;
-        badge.title = "Tracking pixel sent";
-        badge.textContent = "✓";
+        badge.title = tooltip;
+        badge.setAttribute("data-tooltip", tooltip);
+        badge.textContent = read === null ? "✖" : "✓";
         badge.style.cssText =
             `display:inline-block;` +
             `color:${color};` +

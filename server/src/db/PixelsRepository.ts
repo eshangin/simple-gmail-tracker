@@ -36,12 +36,12 @@ export class PixelsRepository {
         return stmt.get(id, who) as PixelRecord | undefined;
     }
 
-    findByThreadIds(threadIds: string[]): PixelRecord[] {
+    findByThreadIdsAndWho(threadIds: string[], who: string): PixelRecord[] {
         if (threadIds.length === 0) return [];
         const placeholders = threadIds.map(() => "?").join(", ");
         const stmt = db.prepare(
-            `SELECT * FROM Pixels WHERE threadId IN (${placeholders})`
+            `SELECT * FROM Pixels WHERE who = ? AND threadId IN (${placeholders})`
         );
-        return stmt.all(...threadIds) as PixelRecord[];
+        return stmt.all(who, ...threadIds) as PixelRecord[];
     }
 }

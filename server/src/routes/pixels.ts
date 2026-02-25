@@ -42,9 +42,20 @@ router.post("/pixels", (req: Request<{}, {}, RegisterPixelBody>, res: Response) 
 router.post("/pixels/by-messages", (req: Request<{}, {}, ByMessagesBody>, res: Response) => {
     const { threadIds, who } = req.body;
 
-    const readMap = readingsRepo.hasReadingsByThreadIds(threadIds ?? [], who);
+    const requested = threadIds ?? [];
 
-    const result = (threadIds ?? []).map((threadId) => ({
+    // Only consider threadIds that actually exist in the Pixels table.
+    const existingPixels = pixelsRepo.findByThreadIdsAndWho(requested, who);
+    const existingThreadIds = Array.from(new Set(existingPixels.map((p) => p.threadId)));
+
+    // If nothing exists for the requested threadIds, return an empty array.
+    if (existingThreadIds.length === 0) {
+        return res.status(200).json([]);
+    }
+
+    const readMap = readingsRepo.hasReadingsByThreadIds(existingThreadIds, who);
+
+    const result = existingThreadIds.map((threadId) => ({
         threadId,
         read: readMap.get(threadId) ?? false,
     }));
