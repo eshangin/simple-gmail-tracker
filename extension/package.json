@@ -1,6 +1,7 @@
 {
   "name": "simple-gmail-tracker",
   "version": "0.0.1",
+  "license": "MIT",
   "scripts": {
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch"

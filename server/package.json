@@ -1,6 +1,7 @@
 {
     "name": "simple-gmail-tracker-server",
     "version": "1.0.0",
+    "license": "MIT",
     "private": true,
     "scripts": {
         "build": "tsc",
