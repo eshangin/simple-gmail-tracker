@@ -1,0 +1,135 @@
+name: Deploy to VPS
+
+# Workflow: deploy to a VPS using rsync and PM2
+# - Runs on pushes to `deploy`.
+# - Syncs repository files, installs dependencies, and ensures the
+#   app is managed by `pm2` and resurrected after server reboots.
+on:
+  push:
+    branches: [ deploy ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        # Retrieves the repository contents for the workflow runner
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        # Install the requested Node.js version on the runner
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Ensure rsync is available
+        # rsync is used to efficiently sync files to the VPS
+        run: sudo apt-get update && sudo apt-get install -y rsync
+
+      - name: Add SSH key
+        # Load the deployment SSH private key from secrets for remote access
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Ensure remote deploy directory exists
+        # Create the deploy directory on the VPS and set ownership
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "sudo mkdir -p ${DEPLOY_PATH} && sudo chown -R ${VPS_USER}:${VPS_USER} ${DEPLOY_PATH}"
+
+      - name: Sync files to VPS
+        # Push repository files (excluding node_modules and .git) to the VPS
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          RSYNC_RSH="ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no"
+          rsync -avz --delete --exclude='.git' --exclude='node_modules' -e "$RSYNC_RSH" ./ "${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
+
+      - name: Install deps and restart with pm2 on remote
+        # On the VPS: install Node/PM2 if missing, install production deps,
+        # start/restart the app with PM2, save the PM2 process list, and
+        # configure PM2 to start on system boot so the app restarts after a reboot.
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          PM2_NAME: ${{ secrets.PM2_SERVICE_NAME }}
+        run: |
+          ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<REMOTE_EOF
+          set -e
+
+          if ! command -v node >/dev/null 2>&1; then
+            echo "Node not found — installing Node"
+            curl -fsSL https://deb.nodesource.com/setup_25.x | sudo -E bash - && sudo apt-get install -y nodejs
+          fi
+
+          if ! command -v pm2 >/dev/null 2>&1; then
+            echo "pm2 not found — installing pm2"
+            sudo npm install -g pm2
+          fi
+
+          echo "DEPLOY_PATH='${DEPLOY_PATH}'"
+          if [ -z "${DEPLOY_PATH}" ]; then
+            echo "DEPLOY_PATH is empty — aborting"
+            exit 1
+          fi
+
+          echo "Changing directory to ${DEPLOY_PATH}"
+          cd "${DEPLOY_PATH}" || { echo "Failed to cd to ${DEPLOY_PATH}"; exit 1; }
+
+          echo "Installing production dependencies (npm install --omit=dev)"
+          npm install --omit=dev --no-audit --no-fund
+
+          echo "Restarting or starting application with pm2 (${PM2_NAME:-app})"
+          if pm2 restart ${PM2_NAME:-app}; then
+            echo "pm2 restart succeeded"
+          else
+            echo "pm2 restart failed — attempting pm2 start"
+            pm2 start npm --name ${PM2_NAME:-app} -- start
+          fi
+
+          echo "Saving pm2 process list"
+          pm2 save
+
+          # Determine the home directory for the deployment user.
+          # - If deploying as root, use /root.
+          # - Otherwise prefer /home/<user>, but fall back to shell expansion
+          #   (in case the distro uses a different home layout) and finally
+          #   default back to /home/<user> if no resolution succeeds.
+          if [ "${VPS_USER}" = "root" ]; then
+            HOME_DIR="/root"
+          else
+            # Prefer the conventional home path
+            HOME_DIR="/home/${VPS_USER}"
+            # If that path doesn't exist, try resolving the user's home
+            # via shell expansion (e.g. getent, nsswitch, or custom shells).
+            if [ ! -d "${HOME_DIR}" ]; then
+              HOME_DIR=$(eval echo "~${VPS_USER}" 2>/dev/null || true)
+            fi
+            # Use the resolved value if present, otherwise fallback again
+            # to the conventional /home/<user> path.
+            HOME_DIR=${HOME_DIR:-/home/${VPS_USER}}
+          fi
+
+          echo "Configuring pm2 startup for systemd for user ${VPS_USER} (home=\${HOME_DIR})"
+          # Generate and configure the systemd startup unit for pm2
+          # - Runs the pm2 startup helper as the target user so unit files
+          #   are created for that user's pm2 service and placed under
+          #   /etc/systemd/system or the appropriate system location.
+          sudo -i env PATH=\$PATH:/usr/local/bin:/usr/bin pm2 startup systemd -u ${VPS_USER} --hp "\${HOME_DIR}" || true
+          # Reload systemd to pick up any new or changed unit files
+          sudo systemctl daemon-reload
+          # Enable and start the user-specific pm2 systemd unit now and on boot
+          sudo systemctl enable --now pm2-${VPS_USER} || true
+          # Restart the pm2 service to ensure it runs the latest saved process list
+          sudo systemctl restart pm2-${VPS_USER} || true
+          REMOTE_EOF
