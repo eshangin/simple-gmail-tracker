@@ -51,7 +51,8 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           RSYNC_RSH="ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no"
-          rsync -avz --delete --exclude='.git' --exclude='node_modules' -e "$RSYNC_RSH" ./ "${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
+          # Only sync the server subfolder so package.json is available at deploy root
+          rsync -avz --delete --exclude='.git' --exclude='node_modules' -e "$RSYNC_RSH" ./server/ "${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
 
       - name: Install deps and restart with pm2 on remote
         # On the VPS: install Node/PM2 if missing, install production deps,
