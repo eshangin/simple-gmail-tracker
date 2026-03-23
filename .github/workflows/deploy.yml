@@ -95,13 +95,13 @@ jobs:
           echo "Installing production dependencies (npm install --omit=dev)"
           npm install --omit=dev --no-audit --no-fund
 
-          echo "Restarting or starting application with pm2 (${PM2_NAME:-app})"
+          echo "Restarting or starting application with pm2 (${PM2_NAME:-simple-gmail-tracker-server})"
           # Try to restart while updating environment variables
-          if pm2 restart ${PM2_NAME:-app} --update-env; then
+          if pm2 restart ${PM2_NAME:-simple-gmail-tracker-server} --update-env; then
             echo "pm2 restart succeeded"
           else
             echo "pm2 restart failed — attempting pm2 start with PORT=${PORT}"
-            PORT=${PORT} pm2 start npm --name ${PM2_NAME:-app} -- start
+            PORT=${PORT} pm2 start npm --name ${PM2_NAME:-simple-gmail-tracker-server} -- start
           fi
 
           echo "Saving pm2 process list"
