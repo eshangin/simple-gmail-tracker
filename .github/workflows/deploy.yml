@@ -76,9 +76,6 @@ jobs:
           ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<REMOTE_EOF
           set -e
 
-          # Ensure production mode on the remote
-          export NODE_ENV=production
-
           # Set application port from workflow secret (fallback to 3000)
           export APP_PORT='${APP_PORT}'
           export PORT=${APP_PORT:-3000}
@@ -105,14 +102,11 @@ jobs:
           echo "Installing production dependencies (npm ci --omit=dev)"
           npm ci --omit=dev --no-audit --no-fund
 
-          echo "Restarting or starting application with pm2 (${PM2_NAME:-simple-gmail-tracker-server})"
-          # Try to restart while updating environment variables
-          if pm2 restart ${PM2_NAME:-simple-gmail-tracker-server} --update-env; then
-            echo "pm2 restart succeeded"
-          else
-            echo "pm2 restart failed — attempting pm2 start dist/index.js with PORT=${PORT}"
-            PORT=${PORT} pm2 start dist/index.js --name ${PM2_NAME:-simple-gmail-tracker-server} --update-env
-          fi
+          echo "Ensuring application runs with fresh pm2 process (${PM2_NAME:-simple-gmail-tracker-server})"
+          # Delete any existing pm2 process (ignore errors) and start fresh
+          pm2 delete ${PM2_NAME:-simple-gmail-tracker-server} || true
+          echo "Starting application with NODE_ENV=production PORT=${PORT}"
+          NODE_ENV=production PORT=${PORT} pm2 start dist/index.js --name ${PM2_NAME:-simple-gmail-tracker-server} --update-env
 
           echo "Saving pm2 process list"
           pm2 save
