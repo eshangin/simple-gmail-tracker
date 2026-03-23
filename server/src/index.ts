@@ -13,13 +13,21 @@ interface ServerEnv {
 }
 
 const envDir = path.join(process.cwd(), "env");
-const env: ServerEnv = JSON.parse(fs.readFileSync(path.join(envDir, "env.dev.json"), "utf-8"));
+const isProd = process.env.NODE_ENV === "production";
+const envFileName = isProd ? "env.build.json" : "env.dev.json";
+const envPath = path.join(envDir, envFileName);
+if (!fs.existsSync(envPath)) {
+    throw new Error(`[SGT] Missing environment file: ${envPath}`);
+}
+const env: ServerEnv = JSON.parse(fs.readFileSync(envPath, "utf-8"));
 
-const localEnvPath = path.join(envDir, "env.local.json");
-if (fs.existsSync(localEnvPath)) {
-    const localEnv = JSON.parse(fs.readFileSync(localEnvPath, "utf-8")) as Partial<ServerEnv>;
-    Object.assign(env, localEnv);
-    console.log("[SGT] Loaded env overrides from env/env.local.json");
+if (!isProd) {
+    const localEnvPath = path.join(envDir, "env.local.json");
+    if (fs.existsSync(localEnvPath)) {
+        const localEnv = JSON.parse(fs.readFileSync(localEnvPath, "utf-8")) as Partial<ServerEnv>;
+        Object.assign(env, localEnv);
+        console.log("[SGT] Loaded env overrides from env/env.local.json");
+    }
 }
 
 const { BASE_URL, PORT } = env;
