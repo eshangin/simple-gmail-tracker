@@ -72,6 +72,7 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           PM2_NAME: ${{ vars.PM2_SERVICE_NAME }}
           APP_PORT: ${{ vars.APP_PORT }}
+          BUILD_BASE_URL: ${{ secrets.BUILD_BASE_URL }}
         run: |
           ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<REMOTE_EOF
           set -e
@@ -98,6 +99,15 @@ jobs:
 
           echo "Changing directory to ${DEPLOY_PATH}"
           cd "${DEPLOY_PATH}" || { echo "Failed to cd to ${DEPLOY_PATH}"; exit 1; }
+
+          echo "Creating env directory and writing env/env.build.json"
+          mkdir -p env
+          cat > env/env.build.json <<JSON
+{
+  "BASE_URL": "${BUILD_BASE_URL:-http://localhost}",
+  "PORT": ${PORT}
+}
+JSON
 
           echo "Installing production dependencies (npm ci --omit=dev)"
           npm ci --omit=dev --no-audit --no-fund
