@@ -35,7 +35,7 @@ jobs:
       - name: Ensure remote deploy directory exists
         # Create the deploy directory on the VPS and set ownership
         env:
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
@@ -45,7 +45,7 @@ jobs:
       - name: Sync files to VPS
         # Push repository files (excluding node_modules and .git) to the VPS
         env:
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
@@ -58,14 +58,19 @@ jobs:
         # start/restart the app with PM2, save the PM2 process list, and
         # configure PM2 to start on system boot so the app restarts after a reboot.
         env:
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
-          PM2_NAME: ${{ secrets.PM2_SERVICE_NAME }}
+          PM2_NAME: ${{ vars.PM2_SERVICE_NAME }}
+          APP_PORT: ${{ vars.APP_PORT }}
         run: |
           ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<REMOTE_EOF
           set -e
+
+          # Set application port from workflow secret (fallback to 3000)
+          export APP_PORT='${APP_PORT}'
+          export PORT=${APP_PORT:-3000}
 
           if ! command -v node >/dev/null 2>&1; then
             echo "Node not found — installing Node"
@@ -90,11 +95,12 @@ jobs:
           npm install --omit=dev --no-audit --no-fund
 
           echo "Restarting or starting application with pm2 (${PM2_NAME:-app})"
-          if pm2 restart ${PM2_NAME:-app}; then
+          # Try to restart while updating environment variables
+          if pm2 restart ${PM2_NAME:-app} --update-env; then
             echo "pm2 restart succeeded"
           else
-            echo "pm2 restart failed — attempting pm2 start"
-            pm2 start npm --name ${PM2_NAME:-app} -- start
+            echo "pm2 restart failed — attempting pm2 start with PORT=${PORT}"
+            PORT=${PORT} pm2 start npm --name ${PM2_NAME:-app} -- start
           fi
 
           echo "Saving pm2 process list"
