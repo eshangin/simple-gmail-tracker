@@ -22,6 +22,13 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Build server
+        # Build the server on the runner so dist/ is ready for deploy
+        run: |
+          cd server
+          npm ci
+          npm run build
+
       - name: Ensure rsync is available
         # rsync is used to efficiently sync files to the VPS
         run: sudo apt-get update && sudo apt-get install -y rsync
@@ -69,6 +76,9 @@ jobs:
           ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} <<REMOTE_EOF
           set -e
 
+          # Ensure production mode on the remote
+          export NODE_ENV=production
+
           # Set application port from workflow secret (fallback to 3000)
           export APP_PORT='${APP_PORT}'
           export PORT=${APP_PORT:-3000}
@@ -92,16 +102,16 @@ jobs:
           echo "Changing directory to ${DEPLOY_PATH}"
           cd "${DEPLOY_PATH}" || { echo "Failed to cd to ${DEPLOY_PATH}"; exit 1; }
 
-          echo "Installing production dependencies (npm install --omit=dev)"
-          npm install --omit=dev --no-audit --no-fund
+          echo "Installing production dependencies (npm ci --omit=dev)"
+          npm ci --omit=dev --no-audit --no-fund
 
           echo "Restarting or starting application with pm2 (${PM2_NAME:-simple-gmail-tracker-server})"
           # Try to restart while updating environment variables
           if pm2 restart ${PM2_NAME:-simple-gmail-tracker-server} --update-env; then
             echo "pm2 restart succeeded"
           else
-            echo "pm2 restart failed — attempting pm2 start with PORT=${PORT}"
-            PORT=${PORT} pm2 start npm --name ${PM2_NAME:-simple-gmail-tracker-server} -- start
+            echo "pm2 restart failed — attempting pm2 start dist/index.js with PORT=${PORT}"
+            PORT=${PORT} pm2 start dist/index.js --name ${PM2_NAME:-simple-gmail-tracker-server} --update-env
           fi
 
           echo "Saving pm2 process list"
