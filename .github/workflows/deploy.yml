@@ -58,8 +58,9 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           RSYNC_RSH="ssh -p ${VPS_PORT:-22} -o StrictHostKeyChecking=no"
-          # Only sync the server subfolder so package.json is available at deploy root
-          rsync -avz --delete --exclude='.git' --exclude='node_modules' -e "$RSYNC_RSH" ./server/ "${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
+          # Only sync the server subfolder so package.json is available at deploy root.
+          # Exclude the runtime SQLite database so a remote DB file isn't removed or overwritten.
+          rsync -avz --delete --exclude='.git' --exclude='node_modules' --exclude='data/tracker.db' -e "$RSYNC_RSH" ./server/ "${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
 
       - name: Install deps and restart with pm2 on remote
         # On the VPS: install Node/PM2 if missing, install production deps,
@@ -103,6 +104,9 @@ jobs:
           echo "Creating env directory and writing env/env.build.json"
           mkdir -p env
           echo "{\"BASE_URL\":\"${BUILD_BASE_URL:-http://localhost}\",\"PORT\":\${PORT}}" > env/env.build.json
+
+          echo "Ensuring data directory exists (do not overwrite existing DB)"
+          mkdir -p data
 
           echo "Installing production dependencies (npm ci --omit=dev)"
           npm ci --omit=dev --no-audit --no-fund
